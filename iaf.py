@@ -1,5 +1,6 @@
 from sympy import *
 import numpy as np
+import matplotlib.pyplot as plt
 
 R, C, ur, t = symbols("R C ur t") # R =: resistance, C =: capacitance
                                   # ur =: membrane resting potential
@@ -19,7 +20,7 @@ class I(Function):
     
     @classmethod
     def eval(cls, x):
-        return 0.05 # we define I to be a constant function
+        return 0.005 # we define I to be a constant function
 
 
 dudt = u(t).diff(t)
@@ -32,15 +33,39 @@ sol = dsolve(model, u(t), ics={u(0) : urval}) # sol =:  the solution to the inte
 
 
 print(sol)
+eq = sol.rhs
 
+class Leaky():
+    
+    theta = -0.057 # our threshold for the leaky model
+    t0 = 0 # the last time that a "spike" ocurred
+    
+    def __init__(self):
+        self._build_func()
 
-ut = lambdify(t, sol.rhs, "numpy") # the actual solution the the model, converted to a numeric function
+    def run(self, x):
+        res = self.f(x)
+        if res >= (self.theta - 0.0001):
+            res = urval
+            self.t0 = x
+            self._build_func()
+        return res
 
-theta = -55e-3 # our threshold value for the leaky model
+    def _build_func(self):
+        plug = eq.subs(t, t - self.t0)
+        self.f = lambdify(t, plug, "math")
 
+leak = Leaky()
 
-ts = np.linspace(0, 1000, 10000) # the time points where the model will be evaluated
+ts = np.linspace(0, 1000, 1000) # the time points where the model will be evaluated
 
-# TODO: 
-#   integrate the threshold functionality
+results = []
 
+for i in ts:
+    results.append(leak.run(i))
+results = np.array(results)
+
+plt.plot(ts, results)
+plt.xlabel("time (ms)")
+plt.ylabel("Membrane potential (V)")
+plt.show()

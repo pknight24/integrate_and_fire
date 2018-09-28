@@ -20,7 +20,7 @@ class I(Function):
     
     @classmethod
     def eval(cls, x):
-        return 0.005 # we define I to be a constant function
+        return (0.0005 * x) # we define I to be a constant function
 
 
 dudt = u(t).diff(t)
